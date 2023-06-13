@@ -1,73 +1,59 @@
-pipeline{
+pipeline {
+    agent any
+           
+    tools {
+        jdk 'jdk11'
+        maven 'maven3'
+         
+    }  
     
-    agent any 
+    environment {
+        SCANNER_HOME= tool 'sonar-scanner'
+       
+    }
+    
     
     stages {
-        
-        stage('Git Checkout'){
-            
-            steps{
-                
-                script{
-                    
-                    git branch: 'main', url: 'https://github.com/Muqeet466/test123.git'
-                }
-            }
-        }
-        stage('UNIT testing'){
-            
-            steps{
-                
-                script{
-                    
-                    sh 'mvn test'
-                }
-            }
-        }
-        stage('Integration testing'){
-            
-            steps{
-                
-                script{
-                    
-                    sh 'mvn verify -DskipUnitTests'
-                }
-            }
-        }
-        stage('Maven build'){
-            
-            steps{
-                
-                script{
-                    
-                    sh 'mvn clean install'
-                }
-            }
-        }
-        stage('Static code analysis'){
-            
-            steps{
-                
-                script{
-                    
-                    withSonarQubeEnv(credentialsId: 'sonar-api') {
-                        
-                        sh 'mvn clean package sonar:sonar'
-                    }
-                   }
-                    
-                }
-            }
-            stage('Quality Gate Status'){
-                
-                steps{
-                    
-                    script{
-                        
-                        waitForQualityGate abortPipeline: false, credentialsId: 'sonar-api'
-                    }
-                }
+        stage('Git checkout') {
+            steps { 
+                 git branch: 'main', changelog: false, poll: false, url: 'https://github.com/jaiswaladi246/Petclinic.git'
             }
         }
         
+         stage('Code Compile') {
+            steps { 
+                 bat "mvn clean compile"
+            }
+        }
+        
+         stage('Unit Tests') {
+            steps { 
+                 bat "mvn test"
+            }
+        }
+        
+        stage('Sonarqube Analysis') {
+            steps { 
+              bat "mvn clean package"
+              bat ''' mvn sonar:sonar -Dsonar.url=http://localhost:9000/ -Dsonar.login=38ce444cdea4a6380d07a8ac955b7422681ac3c7 -Dsonar.projectName=Petclinic \
+                -Dsonar.java.binaries=. \
+                -Dsonar.projectKey=Petclinic '''
+            }
+        }
+        
+        
+        stage('OWASP SCAN') {
+            steps { 
+                dependencyCheck additionalArguments: '--scan ./ ', odcInstallation: 'DP-Check'
+                dependencyCheckPublisher pattern: '**dependecy-check-report.xml'
+            }
+        }
+        
+        stage('Build Artifact') {
+            steps { 
+                 bat "mvn clean install"
+            }
+        }
+        
+    }
 }
