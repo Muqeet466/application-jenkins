@@ -14,9 +14,15 @@ pipeline {
     
     
     stages {
-        stage('Git checkout') {
-            steps { 
-                 git branch: 'main', changelog: false, poll: false, url: 'https://github.com/jaiswaladi246/Petclinic.git'
+        
+        stage('Git Checkout'){
+            
+            steps{
+                
+                script{
+                    
+                    git branch: 'main', url: 'https://github.com/vikash-kumar01/mrdevops_javaapplication.git'
+                }
             }
         }
         
@@ -54,6 +60,5 @@ pipeline {
                  bat "mvn clean install"
             }
         }
-        
     }
 }
